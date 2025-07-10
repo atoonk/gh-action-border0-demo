@@ -1,0 +1,31 @@
+name: Border0 Test Workflow
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-border0:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Print public IP before
+        run: curl -s https://ifconfig.me
+
+      - name: Install Border0 CLI
+        run: |
+          sudo curl -L https://download.border0.com/linux_amd64/border0 \
+            -o /usr/local/bin/border0
+          sudo chmod +x /usr/local/bin/border0
+
+      - name: Connect to Border0 as Exit Node
+        env:
+          BORDER0_TOKEN: ${{ secrets.BORDER0_TOKEN }}
+          BORDER0_EXIT_NODE: ${{ secrets.BORDER0_EXIT_NODE }}
+        run: |
+          border0 node install --start-vpn
+          border0 node exitnode set "$BORDER0_EXIT_NODE"
+
+      - name: Print public IP after
+        run: curl -s https://ifconfig.me
