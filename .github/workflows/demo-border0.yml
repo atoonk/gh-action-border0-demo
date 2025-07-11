@@ -31,7 +31,7 @@ jobs:
         run: curl -s https://ipinfo.io | jq '{ip, city, region,country, org}'
 
       - name: Configure kubeconfig
-        run: border0 client kubeconfig set --service my-k8s-cluster
+        run: border0 client kubeconfig set --service k8-yvr
 
       - name: Check pods
         run: kubectl get pods
