@@ -9,9 +9,7 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-      - name: install jq
-        run: |
-          sudo apt-get update && sudo apt-get install -y jq
+
       - name: Print public IP before
         run: curl -s https://ipinfo.io | jq '{ip, city, region,country, org}'
 
