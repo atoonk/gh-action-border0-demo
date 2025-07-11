@@ -9,9 +9,11 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-
+      - name: install jq
+        run: |
+          sudo apt-get update && sudo apt-get install -y jq
       - name: Print public IP before
-        run: curl -s ipinfo.io
+        run: curl -s https://ipinfo.io | jq '{ip, city, region,country, org}'
 
       - name: Install Border0 CLI
         run: |
@@ -26,11 +28,11 @@ jobs:
         run: |
           echo "$BORDER0_TOKEN" > /tmp/border0.token
           sudo border0 node install --start-vpn --token from:file:/tmp/border0.token
-          sleep 15  # Give it a few seconds to initialize
+          sleep 10  # Give it a few seconds to initialize
           border0 node exitnode set "$BORDER0_EXIT_NODE"
 
       - name: Print public IP after
-        run: curl -s ipinfo.io
+        run: curl -s https://ipinfo.io | jq '{ip, city, region,country, org}'
 
       - name: Install kubectl
         run: |
