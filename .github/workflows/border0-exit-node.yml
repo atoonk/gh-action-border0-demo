@@ -42,7 +42,7 @@ jobs:
 
       - name: Set Border0 Kubeconfig
         run: |
-          border0 client kubeconfig set --service border0-k8-production
+          border0 client kubeconfig set --service k8-yvr
 
       - name: Show kubectl config
         run: kubectl config view
