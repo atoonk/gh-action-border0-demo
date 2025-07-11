@@ -25,8 +25,8 @@ jobs:
           BORDER0_EXIT_NODE: ${{ secrets.BORDER0_EXIT_NODE }}
         run: |
           echo "$BORDER0_TOKEN" > /tmp/border0.token
-          nohup border0 vpn --token from:file:/tmp/border0.token > vpn.log 2>&1 &
-          sleep 10
+          sudo border0 node install --start-vpn --token from:file:/tmp/border0.token
+          sleep 15  # Give it a few seconds to initialize
           border0 node exitnode set "$BORDER0_EXIT_NODE"
 
       - name: Print public IP after
