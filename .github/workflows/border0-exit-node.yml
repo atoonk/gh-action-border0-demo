@@ -25,15 +25,14 @@ jobs:
           BORDER0_EXIT_NODE: ${{ secrets.BORDER0_EXIT_NODE }}
         run: |
           echo "$BORDER0_TOKEN" > /tmp/border0.token
-          sudo border0 node install --start-vpn --token from:file:/tmp/border0.token
-          sleep 15  # Give it a few seconds to initialize
+          nohup border0 vpn --token from:file:/tmp/border0.token > vpn.log 2>&1 &
+          sleep 10
           border0 node exitnode set "$BORDER0_EXIT_NODE"
 
       - name: Print public IP after
         run: curl -s https://ifconfig.me
 
-
-- name: Install kubectl
+      - name: Install kubectl
         run: |
           echo "Installing kubectl..."
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
