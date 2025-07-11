@@ -11,7 +11,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Print public IP before
-        run: curl -s https://ifconfig.me
+        run: curl -s ipinfo.io
 
       - name: Install Border0 CLI
         run: |
@@ -30,7 +30,7 @@ jobs:
           border0 node exitnode set "$BORDER0_EXIT_NODE"
 
       - name: Print public IP after
-        run: curl -s https://ifconfig.me
+        run: curl -s ipinfo.io
 
       - name: Install kubectl
         run: |
