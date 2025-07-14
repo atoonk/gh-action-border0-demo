@@ -1,4 +1,4 @@
-name: Border0 Test Workflow
+name: Border0 exit-node demo
 
 on:
   workflow_dispatch:
