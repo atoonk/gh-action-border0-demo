@@ -1,4 +1,4 @@
-name: Border0 Demo Workflow
+name: Border0 Kubernetes Deploy 
 on:
   workflow_dispatch:
 
