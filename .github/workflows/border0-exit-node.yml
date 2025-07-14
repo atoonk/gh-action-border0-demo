@@ -31,22 +31,3 @@ jobs:
 
       - name: Print public IP after
         run: curl -s https://ipinfo.io | jq '{ip, city, region,country, org}'
-
-      - name: Set Border0 Kubeconfig
-        run: |
-          border0 client kubeconfig set --service k8-yvr
-
-      - name: Show kubectl config
-        run: kubectl config view
-
-      - name: Show Kubernetes cluster info
-        run: kubectl cluster-info
-
-      - name: Show nodes
-        run: kubectl get nodes
-
-      - name: Show pods
-        run: kubectl get pods --all-namespaces
-
-      - name: Show services
-        run: kubectl get services --all-namespaces
