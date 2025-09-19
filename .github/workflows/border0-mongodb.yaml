@@ -6,8 +6,8 @@ jobs:
   query-mongodb-via-border0:
     runs-on: ubuntu-latest
     env:
-      # You can override this in repo secrets if you like
-      MONGO_URI: ${{ secrets.MONGO_URI || 'mongodb://ddb-password:27017/library' }}
+      # Optional. If unset, the script below will default it safely.
+      MONGO_URI: ${{ secrets.MONGO_URI }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -38,8 +38,9 @@ jobs:
 
       - name: Wait for MongoDB to be reachable
         run: |
+          URI="${MONGO_URI:-mongodb://ddb-password:27017/library}"
           for i in {1..12}; do
-            if mongosh "$MONGO_URI" --eval "db.runCommand({ ping: 1 })" --quiet >/dev/null 2>&1; then
+            if mongosh "$URI" --eval "db.runCommand({ ping: 1 })" --quiet >/dev/null 2>&1; then
               echo "MongoDB reachable"
               exit 0
             fi
@@ -52,8 +53,11 @@ jobs:
       - name: Run sample query
         id: mongoquery
         run: |
-          echo 'db.books.find().limit(10).toArray()' | mongosh "$MONGO_URI" --quiet | tee /tmp/query_output.json
+          URI="${MONGO_URI:-mongodb://ddb-password:27017/library}"
+          echo 'db.books.find().limit(10).toArray()' | mongosh "$URI" --quiet | tee /tmp/query_output.json
 
       - name: Upload query output
         uses: actions/upload-artifact@v4
         with:
+          name: mongodb-query-output
+          path: /tmp/query_output.json
