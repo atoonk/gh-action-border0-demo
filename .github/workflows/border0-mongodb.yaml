@@ -58,6 +58,18 @@ jobs:
 
       - name: Upload query output
         uses: actions/upload-artifact@v4
+
+      # Debug information on failure
+      # If this workflow fails to reach MongoDB, these commands are useful for Border0 status.
+      # You can also run them locally to inspect node and service state:
+      #   border0 node debug peers
+      #   border0 node debug service list
+      - name: Border0 debug on failure
+        if: failure()
+        run: |
+          echo "Collecting Border0 debug info because a previous step failed..."
+          border0 node debug peers || true
+          border0 node debug service list || true
         with:
           name: mongodb-query-output
           path: /tmp/query_output.json
