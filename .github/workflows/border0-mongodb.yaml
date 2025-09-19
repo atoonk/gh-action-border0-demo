@@ -70,6 +70,3 @@ jobs:
           echo "Collecting Border0 debug info because a previous step failed..."
           border0 node debug peers || true
           border0 node debug service list || true
-        with:
-          name: mongodb-query-output
-          path: /tmp/query_output.json
