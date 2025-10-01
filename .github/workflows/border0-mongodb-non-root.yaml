@@ -1,4 +1,4 @@
-name: Border0 MongoDB Query
+name: Border0 MongoDB Query non root
 on:
   workflow_dispatch:
 
