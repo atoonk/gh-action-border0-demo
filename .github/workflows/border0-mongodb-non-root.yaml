@@ -18,10 +18,16 @@ jobs:
 
       - name: Allow non root to manage networking
         run: |
+        
           sudo apt-get update
           sudo apt-get install -y libcap2-bin
+
+          # Resolve the real ip binary, since /usr/sbin/ip is a symlink on Ubuntu 24.04
+          IP_BIN="$(readlink -f "$(command -v ip)")"
+          echo "ip binary resolved to: $IP_BIN"
+          
           sudo setcap cap_net_admin+ep /usr/local/bin/border0
-          sudo setcap cap_net_admin+ep /usr/sbin/ip
+          sudo setcap cap_net_admin+ep "$IP_BIN"
 
       - name: Verify capability on binary
         run: |
