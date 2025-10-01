@@ -20,7 +20,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libcap2-bin
-          sudo setcap cap_net_admin,cap_net_raw+ep /usr/local/bin/border0
+          sudo setcap cap_net_admin+ep /usr/local/bin/border0
+          sudo setcap cap_net_admin+ep /usr/sbin/ip
 
       - name: Verify capability on binary
         run: |
