@@ -6,7 +6,6 @@ jobs:
   query-mongodb-via-border0:
     runs-on: ubuntu-latest
     env:
-      # Optional. If unset, steps will default to mongodb://ddb-password:27017/library
       MONGO_URI: ${{ secrets.MONGO_URI }}
     steps:
       - name: Checkout repo
@@ -21,12 +20,21 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libcap2-bin
-          sudo setcap cap_net_admin+ep /usr/local/bin/border0
+          sudo setcap cap_net_admin,cap_net_raw+ep /usr/local/bin/border0
 
       - name: Verify capability on binary
         run: |
           which border0
           getcap /usr/local/bin/border0 || true
+
+      - name: Check TUN device
+        run: |
+          if [ ! -e /dev/net/tun ]; then
+            sudo modprobe tun
+          fi
+          ls -l /dev/net/tun || true
+          # Make it readable by non root for this job if needed
+          sudo chmod 0666 /dev/net/tun || true
 
       - name: Start Border0 agent and VPN
         env:
@@ -79,9 +87,19 @@ jobs:
           border0 node vpn stop || true
           if [ -f /tmp/border0_agent.pid ]; then kill "$(cat /tmp/border0_agent.pid)" || true; fi
 
-      - name: Border0 debug on failure
+      - name: Route table debug on failure
         if: failure()
         run: |
-          echo "Collecting Border0 debug info because a previous step failed..."
-          border0 node debug peers || true
-          border0 node debug service list || true
+          echo "Route debug due to failure"
+          ip addr || true
+          ip route || true
+          ip rule || true
+          ip route get 8.8.8.8 || true
+
+      - name: Fallback start of VPN with sudo
+        if: failure()
+        env:
+          BORDER0_TOKEN: ${{ secrets.BORDER0_TOKEN }}
+        run: |
+          echo "Retrying VPN start with sudo only for this step"
+          sudo -E env BORDER0_TOKEN="$BORDER0_TOKEN" border0 node vpn start || true
