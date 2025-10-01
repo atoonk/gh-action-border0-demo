@@ -1,0 +1,88 @@
+name: Border0 MongoDB Query
+on:
+  workflow_dispatch:
+
+jobs:
+  query-mongodb-via-border0:
+    runs-on: ubuntu-latest
+    env:
+      # Optional. If unset, steps will default to mongodb://ddb-password:27017/library
+      MONGO_URI: ${{ secrets.MONGO_URI }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install Border0 CLI
+        run: |
+          sudo curl -fsSL https://download.border0.com/linux_amd64/border0 -o /usr/local/bin/border0
+          sudo chmod +x /usr/local/bin/border0
+
+      - name: Allow non root to manage networking
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libcap2-bin
+          sudo setcap cap_net_admin+ep /usr/local/bin/border0
+
+      - name: Start Border0 agent and VPN
+        env:
+          BORDER0_TOKEN: ${{ secrets.BORDER0_TOKEN }}
+        run: |
+          # Start agent in background as current user
+          border0 node start &
+          echo $! > /tmp/border0_agent.pid
+
+          # Give the agent a moment to initialize
+          sleep 2
+
+          # Start VPN tunnel
+          border0 node vpn start
+
+      - name: Install mongosh
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gnupg curl ca-certificates
+          curl -fsSL https://pgp.mongodb.com/server-6.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-6.0.gpg --dearmor
+          echo "deb [signed-by=/usr/share/keyrings/mongodb-server-6.0.gpg] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
+          sudo apt-get update
+          sudo apt-get install -y mongodb-mongosh
+          mongosh --version
+
+      - name: Wait for MongoDB to be reachable
+        run: |
+          URI="${MONGO_URI:-mongodb://ddb-password:27017/library}"
+          for i in {1..12}; do
+            if mongosh "$URI" --eval "db.runCommand({ ping: 1 })" --quiet >/dev/null 2>&1; then
+              echo "MongoDB reachable"
+              exit 0
+            fi
+            echo "Waiting for MongoDB... attempt $i"
+            sleep 5
+          done
+          echo "MongoDB not reachable after retries"
+          exit 1
+
+      - name: Run sample query
+        id: mongoquery
+        run: |
+          URI="${MONGO_URI:-mongodb://ddb-password:27017/library}"
+          echo 'db.books.find().limit(10).toArray()' | mongosh "$URI" --quiet | tee /tmp/query_output.json
+
+      - name: Upload query output
+        uses: actions/upload-artifact@v4
+        with:
+          name: mongodb-query-output
+          path: /tmp/query_output.json
+
+      - name: Stop VPN and agent
+        if: always()
+        run: |
+          border0 node vpn stop || true
+          if [ -f /tmp/border0_agent.pid ]; then kill "$(cat /tmp/border0_agent.pid)" || true; fi
+
+      # Debug information on failure
+      - name: Border0 debug on failure
+        if: failure()
+        run: |
+          echo "Collecting Border0 debug info because a previous step failed..."
+          border0 node debug peers || true
+          border0 node debug service list || true
