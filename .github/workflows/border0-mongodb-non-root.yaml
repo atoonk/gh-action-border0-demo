@@ -1,4 +1,4 @@
-name: Border0 MongoDB Query non root
+name: Border0 MongoDB Query
 on:
   workflow_dispatch:
 
@@ -23,18 +23,18 @@ jobs:
           sudo apt-get install -y libcap2-bin
           sudo setcap cap_net_admin+ep /usr/local/bin/border0
 
+      - name: Verify capability on binary
+        run: |
+          which border0
+          getcap /usr/local/bin/border0 || true
+
       - name: Start Border0 agent and VPN
         env:
           BORDER0_TOKEN: ${{ secrets.BORDER0_TOKEN }}
         run: |
-          # Start agent in background as current user
           border0 node start &
           echo $! > /tmp/border0_agent.pid
-
-          # Give the agent a moment to initialize
           sleep 2
-
-          # Start VPN tunnel
           border0 node vpn start
 
       - name: Install mongosh
@@ -79,7 +79,6 @@ jobs:
           border0 node vpn stop || true
           if [ -f /tmp/border0_agent.pid ]; then kill "$(cat /tmp/border0_agent.pid)" || true; fi
 
-      # Debug information on failure
       - name: Border0 debug on failure
         if: failure()
         run: |
