@@ -27,7 +27,7 @@ jobs:
           echo "ip binary resolved to: $IP_BIN"
           
           sudo setcap cap_net_admin+ep /usr/local/bin/border0
-          sudo setcap cap_net_admin+ep "$IP_BIN"
+          sudo setcap cap_net_admin+eip "$IP_BIN"
 
       - name: Verify capability on binary
         run: |
