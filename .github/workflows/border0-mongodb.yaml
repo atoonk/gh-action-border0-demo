@@ -22,7 +22,7 @@ jobs:
           BORDER0_TOKEN: ${{ secrets.BORDER0_TOKEN }}
         run: |
           echo "$BORDER0_TOKEN" > /tmp/border0.token
-          sudo border0 node install --start-vpn --token from:file:/tmp/border0.token --ephemeral
+          sudo border0 node install --start-vpn --ephemeral --token from:file:/tmp/border0.token
           # Give the client a moment to come up and route traffic
           sleep 5
 
