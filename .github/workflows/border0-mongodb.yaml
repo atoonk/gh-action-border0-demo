@@ -6,7 +6,6 @@ jobs:
   query-mongodb-via-border0:
     runs-on: ubuntu-latest
     env:
-      # Optional. If unset, steps will default to mongodb://ddb-password:27017/library
       MONGO_URI: ${{ secrets.MONGO_URI }}
     steps:
       - name: Checkout repo
@@ -17,14 +16,46 @@ jobs:
           sudo curl -L https://download.border0.com/linux_amd64/border0 -o /usr/local/bin/border0
           sudo chmod +x /usr/local/bin/border0
 
-      - name: Start Border0 client
+      - name: Start Border0 client and verify VPN via ping
         env:
           BORDER0_TOKEN: ${{ secrets.BORDER0_TOKEN }}
         run: |
           echo "$BORDER0_TOKEN" > /tmp/border0.token
           sudo border0 node install --start-vpn --ephemeral --token from:file:/tmp/border0.token
-          # Give the client a moment to come up and route traffic
-          sleep 5
+
+          MAX_RETRIES=3
+          PING_HOST="1.2.3.4"
+
+          try_vpn() {
+              echo "Checking VPN connectivity..."
+              for ((i=1; i<=30; i++)); do
+                  if ping -c 1 -W 1 "$PING_HOST" > /dev/null 2>&1; then
+                      echo "✅ Ping to $PING_HOST succeeded."
+                      return 0
+                  fi
+                  echo "Ping attempt $i failed. Retrying in 1s..."
+                  sleep 1
+              done
+              echo "❌ Ping failed after 30 seconds."
+              return 1
+          }
+
+          for ((attempt=1; attempt<=MAX_RETRIES; attempt++)); do
+              echo "==== VPN connectivity check attempt $attempt of $MAX_RETRIES ===="
+              if try_vpn; then
+                  echo "VPN is working."
+                  break
+              fi
+              echo "Restarting VPN..."
+              sudo border0 node vpn stop || true
+              sleep 3
+              sudo border0 node vpn start || true
+              sleep 3
+              if [[ $attempt -eq $MAX_RETRIES ]]; then
+                  echo "🚨 VPN failed after $MAX_RETRIES attempts."
+                  exit 1
+              fi
+          done
 
       - name: Install mongosh
         run: |
@@ -38,7 +69,6 @@ jobs:
 
       - name: Wait for MongoDB to be reachable
         run: |
-          # Use secret if provided, else default to given URI
           URI="${MONGO_URI:-mongodb://ddb-password:27017/library}"
           for i in {1..12}; do
             if mongosh "$URI" --eval "db.runCommand({ ping: 1 })" --quiet >/dev/null 2>&1; then
@@ -49,7 +79,6 @@ jobs:
             sleep 5
           done
           echo "MongoDB not reachable after retries"
-          # Exit non zero to mark failure and trigger the debug step below
           exit 1
 
       - name: Run sample query
@@ -64,11 +93,6 @@ jobs:
           name: mongodb-query-output
           path: /tmp/query_output.json
 
-      # Debug information on failure
-      # If this workflow fails to reach MongoDB, these commands are useful for Border0 status.
-      # You can also run them locally to inspect node and service state:
-      #   border0 node debug peers
-      #   border0 node debug service list
       - name: Border0 debug on failure
         if: failure()
         run: |
