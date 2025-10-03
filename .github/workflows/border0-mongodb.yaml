@@ -24,7 +24,7 @@ jobs:
           sudo border0 node install --start-vpn --ephemeral --token from:file:/tmp/border0.token
 
           MAX_RETRIES=3
-          PING_HOST="1.2.3.4"
+          PING_HOST=ddb-password
 
           try_vpn() {
               echo "Checking VPN connectivity..."
