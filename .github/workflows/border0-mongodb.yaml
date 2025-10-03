@@ -22,6 +22,7 @@ jobs:
         run: |
           echo "$BORDER0_TOKEN" > /tmp/border0.token
           sudo border0 node install --start-vpn --ephemeral --token from:file:/tmp/border0.token
+          sleep 5
 
           MAX_RETRIES=3
           PING_HOST=ddb-password
