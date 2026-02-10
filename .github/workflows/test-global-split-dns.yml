@@ -57,7 +57,8 @@ jobs:
           set -euxo pipefail
 
           echo "Should resolve via OpenDNS:"
-          resolvectl query debug.opendns.com
+          resolvectl query debug.opendns.com --type=TXT
+
 
           echo "TXT record via system resolver (must succeed):"
           dig -t TXT debug.opendns.com
