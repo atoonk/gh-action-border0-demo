@@ -47,7 +47,7 @@ jobs:
           set -euxo pipefail
 
           sudo resolvectl dns utun9 208.67.222.22
-          sudo resolvectl domain utun9 ~.opendns.com
+          sudo resolvectl domain utun9 ~opendns.com
           sudo resolvectl flush-caches
 
           resolvectl status
